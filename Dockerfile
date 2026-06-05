@@ -1,10 +1,6 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
-FROM base AS deps
-COPY apps/backend/package.json ./
-RUN npm install --omit=dev
-
 FROM base AS builder
 COPY apps/backend/package.json ./
 RUN npm install
@@ -13,10 +9,8 @@ RUN npx medusa build
 
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/.medusa ./.medusa
-COPY apps/backend/medusa-config.ts ./medusa-config.ts
-COPY apps/backend/package.json ./package.json
-COPY apps/backend/src ./src
+WORKDIR /app
+COPY --from=builder /app/.medusa/server ./
+RUN npm install --omit=dev
 EXPOSE 9000
 CMD ["sh", "-c", "npx medusa db:migrate && npx medusa start"]
