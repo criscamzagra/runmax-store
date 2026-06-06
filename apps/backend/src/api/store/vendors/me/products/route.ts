@@ -23,18 +23,7 @@ export async function GET(
   const allProducts = await productService.listProducts(
     {},
     {
-      select: [
-        "id",
-        "title",
-        "handle",
-        "status",
-        "thumbnail",
-        "description",
-        "created_at",
-        "updated_at",
-        "metadata",
-      ],
-      relations: ["variants", "variants.prices"],
+      relations: ["variants"],
       order: { created_at: "DESC" },
     }
   )
