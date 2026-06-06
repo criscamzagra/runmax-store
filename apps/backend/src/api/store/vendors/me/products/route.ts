@@ -20,8 +20,8 @@ export async function GET(
     Modules.PRODUCT
   )
 
-  const products = await productService.listProducts(
-    { metadata: { vendor_id: vendorId } },
+  const allProducts = await productService.listProducts(
+    {},
     {
       select: [
         "id",
@@ -37,6 +37,10 @@ export async function GET(
       relations: ["variants", "variants.prices"],
       order: { created_at: "DESC" },
     }
+  )
+
+  const products = allProducts.filter(
+    (p) => (p.metadata as Record<string, unknown>)?.vendor_id === vendorId
   )
 
   res.json({ products, count: products.length })
