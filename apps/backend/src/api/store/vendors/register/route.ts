@@ -1,4 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { IAuthModuleService } from "@medusajs/framework/types"
+import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../../../../modules/vendor/service"
 import { VENDOR_MODULE } from "../../../../modules/vendor"
 
@@ -7,30 +9,65 @@ export async function POST(
   res: MedusaResponse
 ): Promise<void> {
   const vendorService: VendorModuleService = req.scope.resolve(VENDOR_MODULE)
+  const authModuleService: IAuthModuleService = req.scope.resolve(Modules.AUTH)
 
-  const { company_name, nit, contact_name, contact_email, contact_phone, description } = req.body as {
+  const {
+    company_name,
+    nit,
+    contact_name,
+    contact_email,
+    contact_phone,
+    description,
+    password,
+  } = req.body as {
     company_name: string
     nit: string
     contact_name: string
     contact_email: string
     contact_phone?: string
     description?: string
+    password: string
   }
 
-  if (!company_name || !nit || !contact_name || !contact_email) {
+  if (!company_name || !nit || !contact_name || !contact_email || !password) {
     res.status(400).json({
-      message: "Campos requeridos: company_name, nit, contact_name, contact_email",
+      message:
+        "Campos requeridos: company_name, nit, contact_name, contact_email, password",
     })
     return
   }
 
   const existing = await vendorService.listVendors({ nit })
-
   if (existing.length > 0) {
     res.status(409).json({
       message: "Ya existe un vendedor registrado con este NIT",
     })
     return
+  }
+
+  const existingByEmail = await vendorService.listVendors({
+    contact_email,
+  })
+  if (existingByEmail.length > 0) {
+    res.status(409).json({
+      message: "Ya existe un vendedor registrado con este email",
+    })
+    return
+  }
+
+  let authIdentity
+  try {
+    authIdentity = await authModuleService.register("emailpass", {
+      body: { email: contact_email, password },
+    } as any)
+  } catch (e: any) {
+    if (e.message?.includes("already exists") || e.message?.includes("Identity")) {
+      res.status(409).json({
+        message: "Ya existe una cuenta con este email",
+      })
+      return
+    }
+    throw e
   }
 
   const vendor = await vendorService.createVendors({
@@ -43,6 +80,15 @@ export async function POST(
     status: "pending",
     fee_pct: 15,
   })
+
+  await authModuleService.updateAuthIdentities([
+    {
+      id: authIdentity.id,
+      app_metadata: {
+        vendor_id: vendor.id,
+      },
+    },
+  ])
 
   res.status(201).json({ vendor })
 }
