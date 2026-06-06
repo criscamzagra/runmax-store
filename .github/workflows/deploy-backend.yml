@@ -35,3 +35,6 @@ jobs:
           railway redeploy --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 78a3b453-3d8e-4a7c-8bc0-63f4ffe3dc5c
+          RAILWAY_SERVICE_ID: 5cefd885-a276-474d-9026-6ab5db02f2a1
+          RAILWAY_ENVIRONMENT_ID: 54822ae9-6827-4aaa-9b02-e71db7289d2e
