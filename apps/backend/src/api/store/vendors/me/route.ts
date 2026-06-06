@@ -1,12 +1,12 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import VendorModuleService from "../../../../modules/vendor/service"
 import { VENDOR_MODULE } from "../../../../modules/vendor"
 
 export async function GET(
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ): Promise<void> {
-  const vendorId = req.auth_context?.app_metadata?.vendor_id as string
+  const vendorId = req.auth_context.app_metadata?.vendor_id as string
 
   if (!vendorId) {
     res.status(401).json({ message: "No autenticado como vendedor" })
@@ -24,10 +24,10 @@ export async function GET(
 }
 
 export async function POST(
-  req: MedusaRequest,
+  req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ): Promise<void> {
-  const vendorId = req.auth_context?.app_metadata?.vendor_id as string
+  const vendorId = req.auth_context.app_metadata?.vendor_id as string
 
   if (!vendorId) {
     res.status(401).json({ message: "No autenticado como vendedor" })
