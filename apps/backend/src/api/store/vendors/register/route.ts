@@ -55,11 +55,20 @@ export async function POST(
     return
   }
 
-  let authIdentity
+  let authIdentityId: string
   try {
-    authIdentity = await authModuleService.register("emailpass", {
+    const result = await authModuleService.register("emailpass", {
       body: { email: contact_email, password },
     } as any)
+
+    if (!result.success || !result.authIdentity) {
+      res.status(400).json({
+        message: result.error ?? "Error al crear credenciales",
+      })
+      return
+    }
+
+    authIdentityId = result.authIdentity.id
   } catch (e: any) {
     if (e.message?.includes("already exists") || e.message?.includes("Identity")) {
       res.status(409).json({
@@ -83,7 +92,7 @@ export async function POST(
 
   await authModuleService.updateAuthIdentities([
     {
-      id: authIdentity.id,
+      id: authIdentityId,
       app_metadata: {
         vendor_id: vendor.id,
       },
