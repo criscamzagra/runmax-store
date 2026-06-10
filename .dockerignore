@@ -1,0 +1,9 @@
+node_modules
+.git
+.github
+.turbo
+.next
+.vercel
+*.md
+.env*
+.DS_Store

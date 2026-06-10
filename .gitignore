@@ -54,3 +54,10 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 **/.DS_Store
+
+# Claude Code local config
+.claude/
+**/.claude/
+
+# Local static uploads
+apps/backend/static/
