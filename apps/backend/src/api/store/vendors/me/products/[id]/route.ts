@@ -39,7 +39,7 @@ export async function GET(
   const result = await getVendorProduct(req, productId)
 
   if ("error" in result) {
-    res.status(result.status).json({ message: result.error })
+    res.status(result.status!).json({ message: result.error })
     return
   }
 
@@ -67,7 +67,7 @@ export async function PUT(
   const result = await getVendorProduct(req, productId)
 
   if ("error" in result) {
-    res.status(result.status).json({ message: result.error })
+    res.status(result.status!).json({ message: result.error })
     return
   }
 
@@ -126,7 +126,7 @@ export async function DELETE(
   const result = await getVendorProduct(req, productId)
 
   if ("error" in result) {
-    res.status(result.status).json({ message: result.error })
+    res.status(result.status!).json({ message: result.error })
     return
   }
 

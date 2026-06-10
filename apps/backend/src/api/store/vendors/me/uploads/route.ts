@@ -15,7 +15,7 @@ export async function POST(
     return
   }
 
-  const files = (req as any).files as Express.Multer.File[]
+  const files = (req as any).files as Array<{ originalname: string; mimetype: string; buffer: Buffer }>
 
   if (!files?.length) {
     res.status(400).json({ message: "No se enviaron archivos" })

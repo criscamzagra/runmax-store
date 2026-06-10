@@ -51,8 +51,8 @@ export async function GET(
   )
 
   const vendorOrders = allOrders.filter((order) =>
-    order.items?.some((item: Record<string, unknown>) =>
-      vendorProductIds.includes(item.product_id as string)
+    order.items?.some((item: any) =>
+      vendorProductIds.includes(item.product_id)
     )
   )
 
@@ -65,20 +65,20 @@ export async function GET(
   const dailySales: Record<string, number> = {}
 
   for (const order of recentOrders) {
-    const vendorItems = (order.items || []).filter((item: Record<string, unknown>) =>
-      vendorProductIds.includes(item.product_id as string)
+    const vendorItems = (order.items || []).filter((item: any) =>
+      vendorProductIds.includes(item.product_id)
     )
 
-    for (const item of vendorItems) {
-      const typedItem = item as Record<string, unknown>
-      const unitPrice = (typedItem.unit_price as number) || 0
-      const qty = (typedItem.quantity as number) || 1
+    for (const rawItem of vendorItems) {
+      const item = rawItem as any
+      const unitPrice = (item.unit_price as number) || 0
+      const qty = (item.quantity as number) || 1
       const lineTotal = unitPrice * qty
 
       gmv += lineTotal
 
-      const productId = typedItem.product_id as string
-      const productTitle = (typedItem.product_title as string) ||
+      const productId = item.product_id as string
+      const productTitle = (item.product_title as string) ||
         allProducts.find((p) => p.id === productId)?.title ||
         "Producto"
 
@@ -91,7 +91,7 @@ export async function GET(
 
     const day = new Date(order.created_at).toISOString().slice(0, 10)
     const dayTotal = vendorItems.reduce(
-      (s: number, i: Record<string, unknown>) =>
+      (s: number, i: any) =>
         s + ((i.unit_price as number) || 0) * ((i.quantity as number) || 1),
       0
     )
@@ -104,12 +104,12 @@ export async function GET(
   let pendientes = 0
   let enRuta = 0
   for (const order of vendorOrders) {
-    const items = (order.items || []) as Array<Record<string, unknown>>
-    const vendorItems = items.filter((i) => vendorProductIds.includes(i.product_id as string))
-    const detail = vendorItems.map((i) => (i.detail || {}) as Record<string, unknown>)
-    const allFulfilled = detail.length > 0 && detail.every((d) => (d.fulfilled_quantity as number) >= (d.quantity as number))
-    const anyShipped = detail.some((d) => (d.shipped_quantity as number) > 0)
-    const allDelivered = detail.length > 0 && detail.every((d) => (d.delivered_quantity as number) >= (d.quantity as number))
+    const items = (order.items || []) as any[]
+    const vendorItems = items.filter((i) => vendorProductIds.includes(i.product_id))
+    const detail = vendorItems.map((i) => (i.detail || {}) as any)
+    const allFulfilled = detail.length > 0 && detail.every((d: any) => (d.fulfilled_quantity as number) >= (d.quantity as number))
+    const anyShipped = detail.some((d: any) => (d.shipped_quantity as number) > 0)
+    const allDelivered = detail.length > 0 && detail.every((d: any) => (d.delivered_quantity as number) >= (d.quantity as number))
     if (allDelivered) continue
     if (anyShipped && !allDelivered) { enRuta++; continue }
     if (!allFulfilled) { pendientes++; continue }
@@ -130,11 +130,11 @@ export async function GET(
   const liquidation = recentOrders
     .slice(0, 10)
     .map((order) => {
-      const vendorItems = (order.items || []).filter((item: Record<string, unknown>) =>
-        vendorProductIds.includes(item.product_id as string)
+      const vendorItems = (order.items || []).filter((item: any) =>
+        vendorProductIds.includes(item.product_id)
       )
       const bruto = vendorItems.reduce(
-        (s: number, i: Record<string, unknown>) =>
+        (s: number, i: any) =>
           s + ((i.unit_price as number) || 0) * ((i.quantity as number) || 1),
         0
       )

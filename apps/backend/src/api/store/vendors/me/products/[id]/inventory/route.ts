@@ -43,9 +43,9 @@ export async function GET(
     })
 
     const levelMap: Record<string, number> = {}
-    for (const link of links as Array<Record<string, unknown>>) {
+    for (const link of links as any[]) {
       const vid = link.variant_id as string
-      const inv = link.inventory as Record<string, unknown> | undefined
+      const inv = link.inventory as any
       const levels = (inv?.location_levels ?? []) as Array<Record<string, number>>
       const total = levels.reduce((s, l) => s + (l.stocked_quantity ?? 0), 0)
       levelMap[vid] = (levelMap[vid] ?? 0) + total
@@ -115,7 +115,7 @@ export async function POST(
         filters: { variant_id: u.variant_id },
       })
 
-      let inventoryItemId = (links[0] as Record<string, string>)?.inventory_item_id
+      let inventoryItemId = (links[0] as any)?.inventory_item_id as string | undefined
 
       if (!inventoryItemId) {
         const variant = product.variants.find((v) => v.id === u.variant_id)

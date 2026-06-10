@@ -60,20 +60,20 @@ export async function GET(
 
   const vendorOrders = allOrders
     .filter((order) =>
-      order.items?.some((item: Record<string, unknown>) =>
-        vendorProductIds.includes(item.product_id as string)
+      order.items?.some((item: any) =>
+        vendorProductIds.includes(item.product_id)
       )
     )
     .map((order) => {
-      const vendorItems = (order.items || []).filter((item: Record<string, unknown>) =>
-        vendorProductIds.includes(item.product_id as string)
+      const vendorItems = (order.items || []).filter((item: any) =>
+        vendorProductIds.includes(item.product_id)
       )
       const vendorTotal = vendorItems.reduce(
-        (sum: number, item: Record<string, unknown>) =>
+        (sum: number, item: any) =>
           sum + ((item.unit_price as number) || 0) * ((item.quantity as number) || 1),
         0
       )
-      const firstItem = vendorItems[0] as Record<string, unknown> | undefined
+      const firstItem = vendorItems[0] as any
       const productInfo = firstItem
         ? vendorProductMap[firstItem.product_id as string]
         : null
@@ -83,23 +83,23 @@ export async function GET(
         display_id: order.display_id,
         created_at: order.created_at,
         customer_name: order.shipping_address
-          ? `${(order.shipping_address as Record<string, unknown>).first_name || ""} ${(order.shipping_address as Record<string, unknown>).last_name || ""}`.trim()
+          ? `${(order.shipping_address as any).first_name || ""} ${(order.shipping_address as any).last_name || ""}`.trim()
           : "Cliente",
-        city: (order.shipping_address as Record<string, unknown>)?.city || "—",
+        city: (order.shipping_address as any)?.city || "—",
         product_title: productInfo?.title || (firstItem?.title as string) || "—",
         product_thumbnail: productInfo?.thumbnail || null,
         quantity: vendorItems.reduce(
-          (s: number, i: Record<string, unknown>) => s + ((i.quantity as number) || 1),
+          (s: number, i: any) => s + ((i.quantity as number) || 1),
           0
         ),
         vendor_total: vendorTotal,
         fulfillment_status: (() => {
-          const details = vendorItems.map((i) => ((i as Record<string, unknown>).detail || {}) as Record<string, unknown>)
-          const allDelivered = details.length > 0 && details.every((d) => (d.delivered_quantity as number) >= (d.quantity as number))
+          const details = vendorItems.map((i: any) => (i.detail || {}) as any)
+          const allDelivered = details.length > 0 && details.every((d: any) => (d.delivered_quantity as number) >= (d.quantity as number))
           if (allDelivered) return "delivered"
-          const anyShipped = details.some((d) => (d.shipped_quantity as number) > 0)
+          const anyShipped = details.some((d: any) => (d.shipped_quantity as number) > 0)
           if (anyShipped) return "shipped"
-          const allFulfilled = details.length > 0 && details.every((d) => (d.fulfilled_quantity as number) >= (d.quantity as number))
+          const allFulfilled = details.length > 0 && details.every((d: any) => (d.fulfilled_quantity as number) >= (d.quantity as number))
           if (allFulfilled) return "fulfilled"
           return "not_fulfilled"
         })(),
