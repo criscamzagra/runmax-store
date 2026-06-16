@@ -7,7 +7,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { VENDOR_MODULE } from "../../../../../../../modules/vendor"
 import VendorModuleService from "../../../../../../../modules/vendor/service"
 
-const STOCK_LOCATION = "sloc_CO_BOGOTA"
+const STOCK_LOCATION = "sloc_01KTBY4F203FEY9R5VH5WR4F3R"
 
 export async function GET(
   req: AuthenticatedMedusaRequest,

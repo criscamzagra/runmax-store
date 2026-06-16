@@ -26,7 +26,7 @@ export async function GET(
   const allProducts = await productService.listProducts(
     {},
     {
-      relations: ["variants"],
+      relations: ["variants", "images"],
       order: { created_at: "DESC" },
     }
   )
@@ -113,7 +113,8 @@ export async function POST(
   const salesChannelService: ISalesChannelModuleService = req.scope.resolve(
     Modules.SALES_CHANNEL
   )
-  const [defaultChannel] = await salesChannelService.listSalesChannels({}, { take: 1 })
+  const allChannels = await salesChannelService.listSalesChannels({}, { take: 10 })
+  const defaultChannel = allChannels.find((ch) => ch.name === "RunMax Storefront") ?? allChannels[0]
 
   const fulfillmentService = req.scope.resolve(Modules.FULFILLMENT)
   const [defaultProfile] = await fulfillmentService.listShippingProfiles({}, { take: 1 })
@@ -157,7 +158,7 @@ export async function POST(
     try {
       const inventoryService: IInventoryService = req.scope.resolve(Modules.INVENTORY)
       const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-      const STOCK_LOCATION = "sloc_CO_BOGOTA"
+      const STOCK_LOCATION = "sloc_01KTBY4F203FEY9R5VH5WR4F3R"
 
       for (let i = 0; i < createdProduct.variants.length; i++) {
         const qty = variants[i]?.inventory_quantity
