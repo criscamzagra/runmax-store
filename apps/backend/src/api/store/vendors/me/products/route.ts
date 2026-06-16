@@ -118,6 +118,8 @@ export async function POST(
   const fulfillmentService = req.scope.resolve(Modules.FULFILLMENT)
   const [defaultProfile] = await fulfillmentService.listShippingProfiles({}, { take: 1 })
 
+  const optionValues = variants.map((v) => v.title)
+
   const { result } = await createProductsWorkflow(req.scope).run({
     input: {
       products: [
@@ -133,11 +135,15 @@ export async function POST(
           sales_channels: defaultChannel
             ? [{ id: defaultChannel.id }]
             : [],
-          variants: variants.map((v) => ({
+          options: [
+            { title: "Variante", values: optionValues },
+          ],
+          variants: variants.map((v, i) => ({
             title: v.title,
             sku: v.sku,
             manage_inventory: true,
             prices: v.prices,
+            options: { Variante: optionValues[i] },
           })),
         },
       ],
