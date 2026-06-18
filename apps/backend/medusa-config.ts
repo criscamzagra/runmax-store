@@ -28,9 +28,17 @@ module.exports = defineConfig({
       resolve: "./src/modules/vendor",
     },
     {
-      resolve: "@medusajs/file-local",
+      resolve: "@medusajs/medusa/file",
       options: {
-        backend_url: `${BACKEND_URL}/static`,
+        providers: [
+          {
+            resolve: "@medusajs/medusa/file-local",
+            id: "local",
+            options: {
+              backend_url: `${BACKEND_URL}/static`,
+            },
+          },
+        ],
       },
     },
   ],
