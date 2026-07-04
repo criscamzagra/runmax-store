@@ -18,11 +18,11 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     const result = await authModule.authenticate("google", {
       actor_type: actor,
       url: req.url,
-      headers: req.headers,
-      query: req.query,
+      headers: req.headers as Record<string, string>,
+      query: req.query as Record<string, string>,
       body: { callback_url: callbackUrl },
       protocol: req.protocol,
-    })
+    } as any)
 
     if ((result as any).location) {
       const googleUrl = new URL((result as any).location)

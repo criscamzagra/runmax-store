@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken"
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const { code } = req.query as Record<string, string>
+  const code = req.query.code as string
   const combinedState = (req.query.state as string) || ""
 
   if (!code) {
@@ -30,27 +30,26 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       ContainerRegistrationKeys.CONFIG_MODULE
     ) as any
 
-    const authResult = await authModule.validateCallback("google", {
+    const authResult = (await authModule.validateCallback("google", {
       actor_type: actor,
       url: req.url,
-      headers: req.headers,
-      query: { ...req.query, state: originalState },
-      body: req.body,
+      headers: req.headers as Record<string, string>,
+      query: { code, state: originalState } as Record<string, string>,
+      body: {},
       protocol: req.protocol,
-    })
+    } as any)) as any
 
-    const result = authResult as any
-    if (!result.success || !result.authIdentity) {
+    if (!authResult.success || !authResult.authIdentity) {
       return res.redirect(
-        `${FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(result.error || "auth_failed")}`
+        `${FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(authResult.error || "auth_failed")}`
       )
     }
 
     const { http } = config.projectConfig
     const entityIdKey = `${actor}_id`
-    const entityId = result.authIdentity?.app_metadata?.[entityIdKey] || ""
+    const entityId = authResult.authIdentity?.app_metadata?.[entityIdKey] || ""
 
-    const providerIdentity = result.authIdentity.provider_identities?.find(
+    const providerIdentity = authResult.authIdentity.provider_identities?.find(
       (p: any) => p.provider === "google"
     )
 
@@ -58,10 +57,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       {
         actor_id: entityId,
         actor_type: actor,
-        auth_identity_id: result.authIdentity.id,
+        auth_identity_id: authResult.authIdentity.id,
         auth_provider: "google",
         app_metadata: {
-          ...(result.authIdentity.app_metadata ?? {}),
+          ...(authResult.authIdentity.app_metadata ?? {}),
           [entityIdKey]: entityId,
         },
         user_metadata: providerIdentity?.user_metadata ?? {},
