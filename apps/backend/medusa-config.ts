@@ -19,7 +19,7 @@ module.exports = defineConfig({
       authMethodsPerActor: {
         user: ["emailpass"],
         customer: ["emailpass", "google"],
-        vendor: ["emailpass"],
+        vendor: ["emailpass", "google"],
       },
     }
   },
