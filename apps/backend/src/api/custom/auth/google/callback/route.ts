@@ -69,9 +69,14 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       { expiresIn: http.jwtExpiresIn || "24h" }
     )
 
-    return res.redirect(
-      `${FRONTEND_URL}/auth/google/callback?access_token=${token}`
-    )
+    const userEmail = providerIdentity?.user_metadata?.email || ""
+    const userName = providerIdentity?.user_metadata?.name || ""
+
+    let redirectUrl = `${FRONTEND_URL}/auth/google/callback?access_token=${token}`
+    if (userEmail) redirectUrl += `&email=${encodeURIComponent(userEmail)}`
+    if (userName) redirectUrl += `&name=${encodeURIComponent(userName)}`
+
+    return res.redirect(redirectUrl)
   } catch (e: any) {
     return res.redirect(
       `${FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(e.message || "server_error")}`
