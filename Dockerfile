@@ -11,6 +11,8 @@ FROM base AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /app/.medusa/server ./
-RUN npm install --omit=dev
+# Reusar los node_modules del builder en vez de un segundo npm install:
+# el doble install excedia el deadline del builder de Railway
+COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 9000
 CMD ["sh", "-c", "npx medusa db:migrate && npx medusa start"]
