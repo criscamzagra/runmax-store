@@ -1,8 +1,10 @@
+import { randomBytes } from "node:crypto"
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { IAuthModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../../../../modules/vendor/service"
 import { VENDOR_MODULE } from "../../../../modules/vendor"
+import { sendVendorVerificationEmail } from "../../../../utils/vendor-verification-email"
 
 export async function POST(
   req: MedusaRequest,
@@ -83,6 +85,10 @@ export async function POST(
     throw e
   }
 
+  // Token de verificacion de email: solo viaja en el correo, nunca en la respuesta
+  const verificationToken = randomBytes(32).toString("hex")
+  const verificationExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
+
   const vendor = await vendorService.createVendors({
     company_name,
     nit,
@@ -94,6 +100,9 @@ export async function POST(
     description: description ?? null,
     status: "pending",
     fee_pct: 15,
+    email_verified: false,
+    email_verification_token: verificationToken,
+    email_verification_expires_at: verificationExpiresAt,
   })
 
   await authModuleService.updateAuthIdentities([
@@ -105,5 +114,17 @@ export async function POST(
     },
   ])
 
-  res.status(201).json({ vendor })
+  const emailSent = await sendVendorVerificationEmail({
+    to: contact_email,
+    companyName: company_name,
+    token: verificationToken,
+  })
+
+  const {
+    email_verification_token: _token,
+    email_verification_expires_at: _expires,
+    ...safeVendor
+  } = vendor
+
+  res.status(201).json({ vendor: safeVendor, verification_email_sent: emailSent })
 }
