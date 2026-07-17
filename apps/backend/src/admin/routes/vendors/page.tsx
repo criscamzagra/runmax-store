@@ -12,6 +12,7 @@ type Vendor = {
   contact_phone: string | null
   description: string | null
   status: "pending" | "approved" | "rejected"
+  email_verified: boolean
   fee_pct: number
   created_at: string
 }
@@ -81,6 +82,14 @@ const VendorsPage = () => {
     }
   }
 
+  const verifiedBadge = (verified: boolean) => {
+    return verified ? (
+      <Badge color="green">Verificado</Badge>
+    ) : (
+      <Badge color="grey">Sin verificar</Badge>
+    )
+  }
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("es-CO", {
       day: "numeric",
@@ -130,6 +139,7 @@ const VendorsPage = () => {
               <Table.HeaderCell>NIT</Table.HeaderCell>
               <Table.HeaderCell>Contacto</Table.HeaderCell>
               <Table.HeaderCell>Email</Table.HeaderCell>
+              <Table.HeaderCell>Email verificado</Table.HeaderCell>
               <Table.HeaderCell>Estado</Table.HeaderCell>
               <Table.HeaderCell>Fee %</Table.HeaderCell>
               <Table.HeaderCell>Fecha</Table.HeaderCell>
@@ -145,6 +155,7 @@ const VendorsPage = () => {
                 <Table.Cell>{vendor.nit}</Table.Cell>
                 <Table.Cell>{vendor.contact_name}</Table.Cell>
                 <Table.Cell>{vendor.contact_email}</Table.Cell>
+                <Table.Cell>{verifiedBadge(vendor.email_verified)}</Table.Cell>
                 <Table.Cell>{statusBadge(vendor.status)}</Table.Cell>
                 <Table.Cell>{vendor.fee_pct}%</Table.Cell>
                 <Table.Cell>{formatDate(vendor.created_at)}</Table.Cell>
