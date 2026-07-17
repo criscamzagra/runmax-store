@@ -17,6 +17,8 @@ export async function POST(
     contact_name,
     contact_email,
     contact_phone,
+    pickup_address,
+    pickup_city,
     description,
     password,
   } = req.body as {
@@ -25,6 +27,8 @@ export async function POST(
     contact_name: string
     contact_email: string
     contact_phone?: string
+    pickup_address?: string
+    pickup_city?: string
     description?: string
     password: string
   }
@@ -85,6 +89,8 @@ export async function POST(
     contact_name,
     contact_email,
     contact_phone: contact_phone ?? null,
+    pickup_address: pickup_address ?? null,
+    pickup_city: pickup_city ?? null,
     description: description ?? null,
     status: "pending",
     fee_pct: 15,
