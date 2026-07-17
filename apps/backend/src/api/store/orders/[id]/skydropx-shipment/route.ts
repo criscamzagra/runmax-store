@@ -3,6 +3,40 @@ import { IOrderModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
 /**
+ * GET /store/orders/:id/skydropx-shipment
+ *
+ * Devuelve la eleccion de transportadora del cliente (guardada en
+ * order.metadata durante el checkout) y si ya existe guia. Fuente fiable de
+ * la metadata: la respuesta de completar carrito NO incluye metadata por
+ * defecto, asi que quien crea la guia (webhook de confirmacion o ruta verify)
+ * la lee de aqui.
+ */
+export async function GET(
+  req: MedusaRequest,
+  res: MedusaResponse
+): Promise<void> {
+  const { id } = req.params
+  const orderService: IOrderModuleService = req.scope.resolve(Modules.ORDER)
+
+  let order
+  try {
+    order = await orderService.retrieveOrder(id)
+  } catch {
+    res.status(404).json({ message: "Pedido no encontrado" })
+    return
+  }
+
+  const md = (order.metadata ?? {}) as Record<string, unknown>
+  res.json({
+    shipment_id: md.skydropx_shipment_id ?? null,
+    tracking_number: md.skydropx_tracking_number ?? null,
+    rate_id: md.skydropx_rate_id ?? null,
+    carrier: md.skydropx_carrier ?? null,
+    service: md.skydropx_service ?? null,
+  })
+}
+
+/**
  * POST /store/orders/:id/skydropx-shipment
  * Body: { shipment_id, tracking_number, label_url, carrier }
  *
