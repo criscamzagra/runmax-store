@@ -1,5 +1,6 @@
 import { defineMiddlewares, authenticate } from "@medusajs/medusa"
 import multer from "multer"
+import { requireIdentityEmail, requireRegistrationCode } from "../utils/registration-middlewares"
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -15,6 +16,21 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/store/customers/me/password",
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    {
+      // Solo clientes: vendedores se registran por /store/vendors/register,
+      // con su propia verificacion de correo.
+      method: ["POST"],
+      matcher: "/auth/customer/emailpass/register",
+      middlewares: [requireRegistrationCode],
+    },
+    {
+      method: ["POST"],
+      matcher: "/store/customers",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], { allowUnregistered: true }),
+        requireIdentityEmail,
+      ],
     },
     {
       method: ["POST"],
