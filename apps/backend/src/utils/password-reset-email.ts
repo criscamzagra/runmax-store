@@ -105,12 +105,12 @@ export function buildPasswordResetHtml(resetUrl: string): string {
       </h1>
       <p style="margin:0;font-size:16px;line-height:1.5;color:${color.textSecondary};">
         Recibimos una solicitud para restablecer la contraseña de tu cuenta en Runmax Shop.
-        Usa el botón para elegir una nueva.
+        Haz clic en el botón de abajo para configurarla.
       </p>
 
       <div style="padding:24px 0;">
         <a href="${href}" style="display:block;padding:14px 16px;background-color:${color.bgInverse};color:${color.textInverse};font-family:${font.display};font-size:16px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;text-align:center;text-decoration:none;">
-          Crear contraseña nueva
+          Restablecer contraseña
         </a>
       </div>
 
@@ -145,8 +145,10 @@ export function buildPasswordResetText(resetUrl: string): string {
     PREHEADER,
     "",
     "Recibimos una solicitud para restablecer la contraseña de tu cuenta en Runmax Shop.",
-    "Abre este enlace para elegir una nueva:",
+    "Abre este enlace para configurarla:",
     resetUrl,
+    "",
+    `El enlace vence en ${RESET_TOKEN_TTL_MINUTES} minutos. Si ya venció, pide uno nuevo desde “¿Olvidaste tu contraseña?”.`,
     "",
     "Si no pediste este cambio, ignora este correo: tu contraseña sigue siendo la misma.",
     "",
