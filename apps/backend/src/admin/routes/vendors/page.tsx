@@ -12,6 +12,8 @@ type Vendor = {
   contact_phone: string | null
   pickup_address: string | null
   pickup_city: string | null
+  pickup_neighborhood: string | null
+  pickup_reference: string | null
   description: string | null
   status: "pending" | "approved" | "rejected"
   email_verified: boolean
@@ -22,15 +24,33 @@ type Vendor = {
 type PickupForm = {
   pickup_address: string
   pickup_city: string
+  pickup_neighborhood: string
+  pickup_reference: string
   contact_phone: string
 }
+
+const EMPTY_FORM: PickupForm = {
+  pickup_address: "",
+  pickup_city: "",
+  pickup_neighborhood: "",
+  pickup_reference: "",
+  contact_phone: "",
+}
+
+const PICKUP_FIELDS: Array<{ key: keyof PickupForm; label: string; placeholder: string }> = [
+  { key: "pickup_address", label: "Dirección", placeholder: "Calle 13A #76-21" },
+  { key: "pickup_city", label: "Ciudad", placeholder: "Cali" },
+  { key: "pickup_neighborhood", label: "Barrio", placeholder: "Centro" },
+  { key: "pickup_reference", label: "Referencia para el mensajero", placeholder: "Bodega 2, timbre azul" },
+  { key: "contact_phone", label: "Teléfono de contacto", placeholder: "3001234567" },
+]
 
 const VendorsPage = () => {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>("")
   const [editing, setEditing] = useState<Vendor | null>(null)
-  const [form, setForm] = useState<PickupForm>({ pickup_address: "", pickup_city: "", contact_phone: "" })
+  const [form, setForm] = useState<PickupForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
   const fetchVendors = useCallback(async () => {
@@ -87,6 +107,8 @@ const VendorsPage = () => {
     setForm({
       pickup_address: vendor.pickup_address ?? "",
       pickup_city: vendor.pickup_city ?? "",
+      pickup_neighborhood: vendor.pickup_neighborhood ?? "",
+      pickup_reference: vendor.pickup_reference ?? "",
       contact_phone: vendor.contact_phone ?? "",
     })
   }
@@ -101,11 +123,11 @@ const VendorsPage = () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pickup_address: form.pickup_address.trim() || null,
-          pickup_city: form.pickup_city.trim() || null,
-          contact_phone: form.contact_phone.trim() || null,
-        }),
+        body: JSON.stringify(
+          Object.fromEntries(
+            PICKUP_FIELDS.map(({ key }) => [key, form[key].trim() || null])
+          )
+        ),
       })
       if (!res.ok) throw new Error()
       toast.success("Dirección de recogida guardada")
@@ -208,7 +230,8 @@ const VendorsPage = () => {
                 <Table.Cell>
                   {vendor.pickup_address && vendor.pickup_city ? (
                     <Text size="small">
-                      {vendor.pickup_address}, {vendor.pickup_city}
+                      {vendor.pickup_address}
+                      {vendor.pickup_neighborhood ? `, ${vendor.pickup_neighborhood}` : ""}, {vendor.pickup_city}
                     </Text>
                   ) : (
                     <Badge color="orange">Sin dirección</Badge>
@@ -249,33 +272,17 @@ const VendorsPage = () => {
               <Text size="small" style={{ color: "#6B7280" }}>
                 {editing?.company_name}. Skydropx y Mensajeros Urbanos recogen los pedidos en esta dirección.
               </Text>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <Label htmlFor="pickup_address">Dirección</Label>
-                <Input
-                  id="pickup_address"
-                  placeholder="Calle 13A #76-21"
-                  value={form.pickup_address}
-                  onChange={(e) => setForm({ ...form, pickup_address: e.target.value })}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <Label htmlFor="pickup_city">Ciudad</Label>
-                <Input
-                  id="pickup_city"
-                  placeholder="Cali"
-                  value={form.pickup_city}
-                  onChange={(e) => setForm({ ...form, pickup_city: e.target.value })}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <Label htmlFor="contact_phone">Teléfono de contacto</Label>
-                <Input
-                  id="contact_phone"
-                  placeholder="3001234567"
-                  value={form.contact_phone}
-                  onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                />
-              </div>
+              {PICKUP_FIELDS.map(({ key, label, placeholder }) => (
+                <div key={key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <Label htmlFor={key}>{label}</Label>
+                  <Input
+                    id={key}
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                </div>
+              ))}
             </div>
           </Drawer.Body>
           <Drawer.Footer>

@@ -9,6 +9,8 @@ const Vendor = model.define("vendor", {
   contact_phone: model.text().nullable(),
   pickup_address: model.text().nullable(),
   pickup_city: model.text().nullable(),
+  pickup_neighborhood: model.text().nullable(),
+  pickup_reference: model.text().nullable(),
   email_verified: model.boolean().default(false),
   email_verification_token: model.text().nullable(),
   email_verification_expires_at: model.dateTime().nullable(),
