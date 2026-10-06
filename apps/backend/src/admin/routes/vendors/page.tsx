@@ -1,6 +1,6 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { BuildingStorefront } from "@medusajs/icons"
-import { Container, Heading, Table, Badge, Button, Text, toast } from "@medusajs/ui"
+import { Container, Heading, Table, Badge, Button, Text, Drawer, Input, Label, toast } from "@medusajs/ui"
 import { useEffect, useState, useCallback } from "react"
 
 type Vendor = {
@@ -10,6 +10,8 @@ type Vendor = {
   contact_name: string
   contact_email: string
   contact_phone: string | null
+  pickup_address: string | null
+  pickup_city: string | null
   description: string | null
   status: "pending" | "approved" | "rejected"
   email_verified: boolean
@@ -17,10 +19,19 @@ type Vendor = {
   created_at: string
 }
 
+type PickupForm = {
+  pickup_address: string
+  pickup_city: string
+  contact_phone: string
+}
+
 const VendorsPage = () => {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>("")
+  const [editing, setEditing] = useState<Vendor | null>(null)
+  const [form, setForm] = useState<PickupForm>({ pickup_address: "", pickup_city: "", contact_phone: "" })
+  const [saving, setSaving] = useState(false)
 
   const fetchVendors = useCallback(async () => {
     try {
@@ -68,6 +79,42 @@ const VendorsPage = () => {
       fetchVendors()
     } catch {
       toast.error("Error al rechazar")
+    }
+  }
+
+  const openEdit = (vendor: Vendor) => {
+    setEditing(vendor)
+    setForm({
+      pickup_address: vendor.pickup_address ?? "",
+      pickup_city: vendor.pickup_city ?? "",
+      contact_phone: vendor.contact_phone ?? "",
+    })
+  }
+
+  // Skydropx y Mensajeros Urbanos recogen en esta direccion. Un campo vacio
+  // se guarda como null para que el frontend vuelva al origen por defecto.
+  const handleSavePickup = async () => {
+    if (!editing) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/admin/vendors/${editing.id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pickup_address: form.pickup_address.trim() || null,
+          pickup_city: form.pickup_city.trim() || null,
+          contact_phone: form.contact_phone.trim() || null,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Dirección de recogida guardada")
+      setEditing(null)
+      fetchVendors()
+    } catch {
+      toast.error("Error", { description: "No se pudo guardar la dirección de recogida" })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -141,6 +188,7 @@ const VendorsPage = () => {
               <Table.HeaderCell>Email</Table.HeaderCell>
               <Table.HeaderCell>Email verificado</Table.HeaderCell>
               <Table.HeaderCell>Estado</Table.HeaderCell>
+              <Table.HeaderCell>Dirección de recogida</Table.HeaderCell>
               <Table.HeaderCell>Fee %</Table.HeaderCell>
               <Table.HeaderCell>Fecha</Table.HeaderCell>
               <Table.HeaderCell>Acciones</Table.HeaderCell>
@@ -157,25 +205,89 @@ const VendorsPage = () => {
                 <Table.Cell>{vendor.contact_email}</Table.Cell>
                 <Table.Cell>{verifiedBadge(vendor.email_verified)}</Table.Cell>
                 <Table.Cell>{statusBadge(vendor.status)}</Table.Cell>
+                <Table.Cell>
+                  {vendor.pickup_address && vendor.pickup_city ? (
+                    <Text size="small">
+                      {vendor.pickup_address}, {vendor.pickup_city}
+                    </Text>
+                  ) : (
+                    <Badge color="orange">Sin dirección</Badge>
+                  )}
+                </Table.Cell>
                 <Table.Cell>{vendor.fee_pct}%</Table.Cell>
                 <Table.Cell>{formatDate(vendor.created_at)}</Table.Cell>
                 <Table.Cell>
-                  {vendor.status === "pending" && (
-                    <div style={{ display: "flex", gap: "6px" }}>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <Button variant="secondary" size="small" onClick={() => openEdit(vendor)}>
+                      Editar recogida
+                    </Button>
+                    {vendor.status === "pending" && (
+                      <>
                       <Button variant="primary" size="small" onClick={() => handleApprove(vendor.id)}>
                         Aprobar
                       </Button>
                       <Button variant="danger" size="small" onClick={() => handleReject(vendor.id)}>
                         Rechazar
                       </Button>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
         </Table>
       )}
+
+      <Drawer open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <Drawer.Content>
+          <Drawer.Header>
+            <Drawer.Title>Dirección de recogida</Drawer.Title>
+          </Drawer.Header>
+          <Drawer.Body>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <Text size="small" style={{ color: "#6B7280" }}>
+                {editing?.company_name}. Skydropx y Mensajeros Urbanos recogen los pedidos en esta dirección.
+              </Text>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <Label htmlFor="pickup_address">Dirección</Label>
+                <Input
+                  id="pickup_address"
+                  placeholder="Calle 13A #76-21"
+                  value={form.pickup_address}
+                  onChange={(e) => setForm({ ...form, pickup_address: e.target.value })}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <Label htmlFor="pickup_city">Ciudad</Label>
+                <Input
+                  id="pickup_city"
+                  placeholder="Cali"
+                  value={form.pickup_city}
+                  onChange={(e) => setForm({ ...form, pickup_city: e.target.value })}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <Label htmlFor="contact_phone">Teléfono de contacto</Label>
+                <Input
+                  id="contact_phone"
+                  placeholder="3001234567"
+                  value={form.contact_phone}
+                  onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                />
+              </div>
+            </div>
+          </Drawer.Body>
+          <Drawer.Footer>
+            <Drawer.Close asChild>
+              <Button variant="secondary" size="small">Cancelar</Button>
+            </Drawer.Close>
+            <Button size="small" isLoading={saving} onClick={handleSavePickup}>
+              Guardar
+            </Button>
+          </Drawer.Footer>
+        </Drawer.Content>
+      </Drawer>
     </Container>
   )
 }
