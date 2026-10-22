@@ -9,6 +9,7 @@
  *   buzon del equipo (runmaxshop@gmail.com). Acepta varias direcciones separadas por coma.
  */
 import { renderInternalEmail, type EmailRow } from "./brand-email"
+import type { VendorApplication } from "./vendor-application"
 
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
@@ -106,7 +107,23 @@ export type NewVendor = {
   created_at?: Date | string | null
 }
 
-export function buildNewVendorEmail(v: NewVendor) {
+/**
+ * `application` viene solo de la solicitud sin contraseña (/store/vendors/apply):
+ * trae lo que el registro normal no pide.
+ */
+export function buildNewVendorEmail(v: NewVendor, application?: VendorApplication) {
+  const join = (items: string[]) => (items.length ? items.join(", ") : null)
+  const extra: EmailRow[] = application
+    ? [
+        { label: "Tipo de vendedor", value: application.seller_type },
+        { label: "Relación con la marca", value: application.relationship },
+        { label: "Categorías", value: join(application.categories) },
+        { label: "Deportes", value: join(application.sports) },
+        { label: "Tamaño del catálogo", value: application.catalog_size },
+        { label: "Dónde vende hoy", value: join(application.channels) },
+        { label: "Sitio web", value: application.website },
+      ]
+    : []
   const rows: EmailRow[] = [
     { label: "Tienda", value: v.company_name },
     { label: "NIT / documento", value: v.nit },
@@ -115,14 +132,17 @@ export function buildNewVendorEmail(v: NewVendor) {
     { label: "Teléfono", value: v.contact_phone },
     { label: "Ciudad", value: v.pickup_city },
     { label: "Dirección de recogida", value: v.pickup_address },
-    { label: "Qué vende", value: v.description },
+    ...extra,
+    { label: application ? "Mensaje" : "Qué vende", value: v.description },
     { label: "Fecha", value: bogotaTime(v.created_at ? new Date(v.created_at) : new Date()) },
   ]
   const { html, text } = renderInternalEmail({
-    preview: `${v.company_name} se registró como vendedor y espera aprobación.`,
-    eyebrow: "Nueva tienda",
+    preview: `${v.company_name} ${application ? "envió una solicitud para vender" : "se registró como vendedor"} y espera aprobación.`,
+    eyebrow: application ? "Nueva solicitud de tienda" : "Nueva tienda",
     title: `${v.company_name} quiere vender en Runmax`,
-    intro: "La tienda quedó en estado pendiente: no puede subir productos hasta que la aprueben en el admin.",
+    intro: application
+      ? "Llegó por el formulario de solicitud: todavía no tiene contraseña. Al aprobarla en el admin, le llega un correo para crear su cuenta."
+      : "La tienda quedó en estado pendiente: no puede subir productos hasta que la aprueben en el admin.",
     rows,
     cta: { href: `${ADMIN_URL}/vendors`, label: "Revisar y aprobar en el admin" },
   })
@@ -136,7 +156,7 @@ export async function notifyAdminNewCustomer(c: NewCustomer): Promise<boolean> {
 }
 
 /** No lanza: un aviso interno nunca debe tumbar un registro. */
-export async function notifyAdminNewVendor(v: NewVendor): Promise<boolean> {
-  const { subject, html, text } = buildNewVendorEmail(v)
+export async function notifyAdminNewVendor(v: NewVendor, application?: VendorApplication): Promise<boolean> {
+  const { subject, html, text } = buildNewVendorEmail(v, application)
   return send(subject, html, text, "admin-signup-email")
 }
