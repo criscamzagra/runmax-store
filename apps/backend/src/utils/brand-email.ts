@@ -6,11 +6,25 @@
  * como HTML porque aqui no hay React Email. Los colores y medidas son copia
  * literal de su theme.ts: si cambian alla, hay que cambiarlos aca.
  *
- * Solo cubre la variante `internal` (correos que el equipo se manda a si
- * mismo): header negro con el logo, contenido y sin pie legal.
+ * Cubre dos variantes de BrandEmailLayout: `internal` (correos que el equipo
+ * se manda a si mismo, sin pie legal) y `transactional` (correos que la
+ * persona pidio, con el pie legal y sin frase de baja).
  */
 
 const SITE_URL = "https://www.runmaxshop.com"
+
+const COMPANY = {
+  legalName: "RUNMAX SHOP S.A.S.",
+  taxId: "902.095.084-8",
+  city: "Cali, Valle del Cauca",
+  email: "info@runmax.com.co",
+}
+
+const LEGAL_LINKS = [
+  { label: "Política de privacidad", href: `${SITE_URL}/privacidad` },
+  { label: "Términos y condiciones", href: `${SITE_URL}/terminos` },
+  { label: "Contacto", href: `${SITE_URL}/contacto` },
+]
 const ASSETS_URL = `${SITE_URL}/email`
 
 const color = {
@@ -61,6 +75,12 @@ export type InternalEmail = {
   /** Pares etiqueta/valor; los vacios se muestran como "—". */
   rows: EmailRow[]
   cta?: { href: string; label: string }
+  /** Nota bajo el boton, ej. cuanto dura un enlace. */
+  note?: string
+  /** `internal` por defecto. `transactional` agrega el pie legal. */
+  kind?: "internal" | "transactional"
+  /** Por que le llego este correo (solo `transactional`). */
+  footerNotice?: string
 }
 
 function rowsHtml(rows: EmailRow[]): string {
@@ -75,6 +95,26 @@ function rowsHtml(rows: EmailRow[]): string {
     .join("")
 }
 
+function footerHtml(notice: string): string {
+  const links = LEGAL_LINKS.map(
+    (l) => `<a href="${l.href}" style="color:${color.textPrimary};text-decoration:none;">${l.label}</a>`
+  ).join("<br>")
+  return `
+        <tr><td style="padding:40px 32px 32px;border-top:2px solid ${color.borderStrong};">
+          <a href="${SITE_URL}"><img src="${ASSETS_URL}/logo-dark.png" width="134" height="28" alt="Runmax" style="display:block;border:0;"></a>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+            <tr>
+              <td style="vertical-align:bottom;font-family:${font.display};font-size:14px;line-height:16px;color:${color.textPrimary};">
+                © ${new Date().getFullYear()} ${COMPANY.legalName}<br>NIT ${COMPANY.taxId}<br>${COMPANY.city}<br>
+                <a href="mailto:${COMPANY.email}" style="color:${color.textPrimary};text-decoration:underline;">${COMPANY.email}</a>
+              </td>
+              <td style="vertical-align:bottom;text-align:right;font-family:${font.display};font-size:14px;line-height:20px;">${links}</td>
+            </tr>
+          </table>
+          <p style="margin:32px 0 0;font-family:${font.body};font-size:12px;line-height:13px;color:${color.textPrimary};">${escapeHtml(notice)}</p>
+        </td></tr>`
+}
+
 export function renderInternalEmail(email: InternalEmail): { html: string; text: string } {
   const cta = email.cta
     ? `
@@ -82,6 +122,14 @@ export function renderInternalEmail(email: InternalEmail): { html: string; text:
         <a href="${escapeHtml(email.cta.href)}" style="display:block;box-sizing:border-box;width:100%;padding:14px 16px;background-color:${color.bgInverse};color:${color.textInverse};font-family:${font.display};font-size:16px;line-height:20px;font-weight:500;text-align:center;text-decoration:none;">${escapeHtml(email.cta.label)}</a>
       </td></tr>`
     : ""
+  const note = email.note
+    ? `
+      <tr><td colspan="2" style="padding:16px 0 0;font-family:${font.body};font-size:14px;line-height:20px;color:${color.textSecondary};text-align:center;">${escapeHtml(email.note)}</td></tr>`
+    : ""
+  const footer =
+    email.kind === "transactional"
+      ? footerHtml(email.footerNotice ?? "Recibes este correo por una gestión que hiciste en Runmax.")
+      : ""
 
   const html = `<!DOCTYPE html>
 <html lang="es">
@@ -106,9 +154,9 @@ export function renderInternalEmail(email: InternalEmail): { html: string; text:
           </table>
         </td></tr>
         <tr><td style="padding:24px 32px 40px;border-top:2px solid ${color.borderStrong};">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rowsHtml(email.rows)}${cta}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rowsHtml(email.rows)}${cta}${note}
           </table>
-        </td></tr>
+        </td></tr>${footer}
       </table>
     </td></tr>
   </table>
@@ -124,6 +172,8 @@ export function renderInternalEmail(email: InternalEmail): { html: string; text:
     "",
     ...email.rows.map((row) => `${row.label}: ${row.value || "—"}`),
     ...(email.cta ? ["", `${email.cta.label}: ${email.cta.href}`] : []),
+    ...(email.note ? ["", email.note] : []),
+    ...(email.kind === "transactional" ? ["", `${COMPANY.legalName} · NIT ${COMPANY.taxId} · ${COMPANY.email}`] : []),
   ].join("\n")
 
   return { html, text }
