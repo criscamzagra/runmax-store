@@ -1,5 +1,6 @@
 import { defineMiddlewares, authenticate } from "@medusajs/medusa"
 import multer from "multer"
+import { requireApprovedVendor } from "../utils/require-approved-vendor"
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -15,6 +16,17 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/store/customers/me/password",
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    {
+      matcher: "/store/vendors/me/products*",
+      middlewares: [requireApprovedVendor],
+    },
+    {
+      // Va antes del multer: a un vendedor no aprobado no se le leen los
+      // archivos.
+      method: ["POST"],
+      matcher: "/store/vendors/me/uploads",
+      middlewares: [requireApprovedVendor],
     },
     {
       method: ["POST"],
