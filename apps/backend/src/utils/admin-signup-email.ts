@@ -6,13 +6,13 @@
  * - RESEND_API_KEY
  * - RESEND_FROM_EMAIL (opcional): remitente
  * - ADMIN_NOTIFICATION_EMAIL (opcional): a quien le llega; por defecto el
- *   buzon corporativo. Acepta varias direcciones separadas por coma.
+ *   buzon del equipo (runmaxshop@gmail.com). Acepta varias direcciones separadas por coma.
  */
 import { renderInternalEmail, type EmailRow } from "./brand-email"
 
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
-const DEFAULT_RECIPIENT = "info@runmax.com.co"
+const DEFAULT_RECIPIENT = "runmaxshop@gmail.com"
 const ADMIN_URL = process.env.RAILWAY_PUBLIC_DOMAIN
   ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/app`
   : "https://runmax-backend-production.up.railway.app/app"

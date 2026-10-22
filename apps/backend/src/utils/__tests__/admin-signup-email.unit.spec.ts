@@ -6,9 +6,9 @@ import {
 import { escapeHtml } from "../brand-email"
 
 describe("adminRecipients", () => {
-  it("usa el buzon corporativo si no hay variable", () => {
-    expect(adminRecipients(undefined)).toEqual(["info@runmax.com.co"])
-    expect(adminRecipients(" , ")).toEqual(["info@runmax.com.co"])
+  it("usa el buzon del equipo si no hay variable", () => {
+    expect(adminRecipients(undefined)).toEqual(["runmaxshop@gmail.com"])
+    expect(adminRecipients(" , ")).toEqual(["runmaxshop@gmail.com"])
   })
 
   it("acepta varias direcciones separadas por coma", () => {
