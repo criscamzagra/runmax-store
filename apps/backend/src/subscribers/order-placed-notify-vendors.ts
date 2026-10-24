@@ -58,6 +58,8 @@ export default async function orderPlacedNotifyVendors({
         title: (item.title as string) || "Producto",
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unit_price) || 0,
+        variant: (item.variant_title as string) || null,
+        thumbnail: (item.thumbnail as string) || null,
       })
       itemsByVendor.set(vendorId, list)
     }
