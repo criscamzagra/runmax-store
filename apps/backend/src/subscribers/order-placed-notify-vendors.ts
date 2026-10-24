@@ -4,14 +4,18 @@ import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../modules/vendor/service"
 import { VENDOR_MODULE } from "../modules/vendor"
 import {
+  parsePaymentMethod,
   sendVendorNewSaleEmail,
   SoldItem,
 } from "../utils/vendor-new-sale-email"
 
 /**
- * Cuando se crea un pedido (pago ya aprobado en el checkout), notifica por
- * correo a cada vendedor cuyos productos fueron comprados, con el detalle
- * de sus items y el enlace al panel de gestion de pedidos.
+ * Cuando se crea un pedido, notifica por correo a cada vendedor cuyos
+ * productos fueron comprados, con el detalle de sus items y el enlace al panel
+ * de gestion de pedidos.
+ *
+ * El pedido puede estar ya cobrado (ePayco) o cobrarse al entregar (contra
+ * entrega): el correo lo dice segun `metadata.payment_method`.
  */
 export default async function orderPlacedNotifyVendors({
   event: { data },
@@ -71,6 +75,9 @@ export default async function orderPlacedNotifyVendors({
       ? `${shippingAddress.first_name || ""} ${shippingAddress.last_name || ""}`.trim() || "Cliente"
       : "Cliente"
     const customerCity = shippingAddress?.city || "—"
+    const paymentMethod = parsePaymentMethod(
+      (order.metadata as Record<string, unknown> | null)?.payment_method
+    )
 
     for (const [vendorId, soldItems] of itemsByVendor) {
       try {
@@ -90,6 +97,7 @@ export default async function orderPlacedNotifyVendors({
           total,
           customerName,
           customerCity,
+          paymentMethod,
         })
       } catch (e) {
         console.error(

@@ -34,8 +34,32 @@ export interface SoldItem {
   thumbnail?: string | null
 }
 
+/**
+ * Como pago el cliente, de `order.metadata.payment_method` (lo escribe el
+ * checkout del frontend, `order-payment-method.ts`). Medusa no lo distingue:
+ * los dos caminos usan `pp_system_default`.
+ */
+export type SalePaymentMethod = "epayco" | "cod"
+
+export function parsePaymentMethod(value: unknown): SalePaymentMethod | null {
+  return value === "epayco" || value === "cod" ? value : null
+}
+
+const PAYMENT_COPY: Record<SalePaymentMethod, { label: string; detail: string }> = {
+  epayco: {
+    label: "Pagado en línea",
+    detail: "El pago ya está aprobado: puedes despachar el pedido.",
+  },
+  cod: {
+    label: "Pago contra entrega",
+    detail: "El cliente paga al recibir, así que todavía no está cobrado.",
+  },
+}
+
 export interface NewSaleEmailParams {
   companyName: string
+  /** Null en pedidos de antes de que el checkout lo guardara: no se muestra. */
+  paymentMethod?: SalePaymentMethod | null
   displayId: string | number
   items: SoldItem[]
   total: number
@@ -51,9 +75,10 @@ function unitCount(items: SoldItem[]): number {
   return items.reduce((sum, item) => sum + item.quantity, 0)
 }
 
-export function newSalePreheader({ displayId, items, total }: NewSaleEmailParams): string {
+export function newSalePreheader({ displayId, items, total, paymentMethod }: NewSaleEmailParams): string {
   const units = unitCount(items)
-  return `Vendiste ${units} ${units === 1 ? "producto" : "productos"} por ${formatCop(total)}. Prepara el pedido #${displayId} para el envío.`
+  const payment = paymentMethod ? ` ${PAYMENT_COPY[paymentMethod].label}.` : ""
+  return `Vendiste ${units} ${units === 1 ? "producto" : "productos"} por ${formatCop(total)}.${payment} Prepara el pedido #${displayId} para el envío.`
 }
 
 function variantLabel(item: SoldItem): string | null {
@@ -90,6 +115,17 @@ function itemRow(item: SoldItem, first: boolean): string {
             <p style="${text("font-weight:700;")}">${formatCop(item.unit_price * item.quantity)}</p>
           </td>
         </tr>`
+}
+
+/** Como pago, en una caja blanca bajo los datos del comprador. Sin el dato, nada. */
+function paymentBlock(method: SalePaymentMethod | null | undefined): string {
+  if (!method) return ""
+  const { label, detail } = PAYMENT_COPY[method]
+  return `
+      <div style="margin-top:16px;padding:16px;background-color:${color.bgCanvas};border:1px solid ${color.borderSubtle};">
+        <p style="${text("font-weight:700;")}">${label}</p>
+        <p style="${text(`margin-top:4px;font-size:14px;line-height:20px;color:${color.textSecondary};`)}">${detail}</p>
+      </div>`
 }
 
 export function buildNewSaleHtml(params: NewSaleEmailParams): string {
@@ -133,6 +169,7 @@ export function buildNewSaleHtml(params: NewSaleEmailParams): string {
       <h2 style="${headingStyle}">Comprador</h2>
       <p style="${text("")}">${escapeHtml(params.customerName)}</p>
       <p style="${text(`color:${color.textSecondary};`)}">${escapeHtml(params.customerCity)}</p>
+${paymentBlock(params.paymentMethod)}
       <p style="${text(`margin-top:16px;font-size:14px;line-height:20px;color:${color.textSecondary};`)}">
         Desde tu panel puedes marcar el pedido como preparado, enviado y entregado.
       </p>
@@ -154,6 +191,9 @@ export function buildNewSaleText(params: NewSaleEmailParams): string {
     newSalePreheader(params),
     "",
     `Hola, ${params.companyName}. Un cliente compró productos de tu tienda en el pedido #${params.displayId}.`,
+    ...(params.paymentMethod
+      ? [`${PAYMENT_COPY[params.paymentMethod].label}. ${PAYMENT_COPY[params.paymentMethod].detail}`]
+      : []),
     "",
     "Lo que vendiste:",
     ...params.items.map((item) => {

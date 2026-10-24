@@ -4,6 +4,7 @@ import {
   newSalePreheader,
   newSaleSubject,
   NewSaleEmailParams,
+  parsePaymentMethod,
 } from "../vendor-new-sale-email"
 
 const SALE: NewSaleEmailParams = {
@@ -71,5 +72,33 @@ describe("vendor new sale email", () => {
     expect(text.split("\n")[0]).toBe(newSalePreheader(SALE))
     expect(text).toContain("- Camiseta Trail (Talla M) × 1: $89.900")
     expect(text).toContain("https://www.runmaxshop.com/vendedor/pedidos")
+  })
+
+  describe("payment method", () => {
+    it("says a paid order can ship", () => {
+      const params = { ...SALE, paymentMethod: "epayco" as const }
+      expect(buildNewSaleHtml(params)).toContain("Pagado en línea")
+      expect(newSalePreheader(params)).toContain("Pagado en línea.")
+      expect(buildNewSaleText(params)).toContain("Pagado en línea. El pago ya está aprobado")
+    })
+
+    it("warns that a cash-on-delivery order is not collected yet", () => {
+      const html = buildNewSaleHtml({ ...SALE, paymentMethod: "cod" })
+      expect(html).toContain("Pago contra entrega")
+      expect(html).toContain("todavía no está cobrado")
+    })
+
+    it("shows nothing for orders placed before the checkout saved it", () => {
+      const html = buildNewSaleHtml({ ...SALE, paymentMethod: null })
+      expect(html).not.toContain("Pagado en línea")
+      expect(html).not.toContain("contra entrega")
+    })
+
+    it("only accepts the values the frontend writes", () => {
+      expect(parsePaymentMethod("epayco")).toBe("epayco")
+      expect(parsePaymentMethod("cod")).toBe("cod")
+      expect(parsePaymentMethod("tarjeta")).toBeNull()
+      expect(parsePaymentMethod(undefined)).toBeNull()
+    })
   })
 })
