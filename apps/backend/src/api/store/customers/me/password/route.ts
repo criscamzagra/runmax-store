@@ -2,8 +2,8 @@ import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/
 import { IAuthModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
-/** Mismo minimo que pide el frontend (ChangePasswordModal, /recuperar/confirmar). */
-const MIN_PASSWORD_LENGTH = 6
+/** Mismo minimo que pide el frontend (`PasswordPolicy.ts`). */
+const MIN_PASSWORD_LENGTH = 8
 
 /**
  * Cambiar la contrasena con la sesion iniciada. Medusa no lo trae: su unico

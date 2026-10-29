@@ -8,8 +8,7 @@
  * - FRONTEND_URL (opcional): base del frontend para el enlace de verificacion
  */
 
-const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
+import { FROM_EMAIL, TEAM_INBOX } from "./email-sender"
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
 
 function buildEmailHtml(companyName: string, verifyUrl: string): string {
@@ -104,6 +103,7 @@ export async function sendVendorVerificationEmail(params: {
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
+        reply_to: TEAM_INBOX,
         to: params.to,
         subject: "Bienvenido a RunMax Shop — confirma tu correo",
         html: buildEmailHtml(params.companyName, verifyUrl),
