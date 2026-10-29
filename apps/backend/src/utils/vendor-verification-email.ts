@@ -4,7 +4,7 @@
  *
  * Requiere en el entorno:
  * - RESEND_API_KEY: API key de Resend
- * - RESEND_FROM_EMAIL (opcional): remitente, ej. "Runmax Shop <pedidos@runmaxshop.com>"
+ * - RESEND_FROM_EMAIL (opcional): remitente, ej. "Runmax Shop <hola@runmaxshop.com>"
  * - FRONTEND_URL (opcional): base del frontend para el enlace de verificacion
  */
 
