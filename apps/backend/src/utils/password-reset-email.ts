@@ -56,7 +56,7 @@ export function buildPasswordResetHtml(resetUrl: string): string {
     title: SUBJECT,
     preheader: PREHEADER,
     body: emailSection(`
-      <h1 style="margin:0 0 16px;font-family:${font.display};font-size:32px;line-height:1.1;font-weight:700;text-transform:uppercase;color:${color.textPrimary};">
+      <h1 style="margin:0 0 16px;font-family:${font.display};font-size:32px;line-height:1.1;font-weight:700;color:${color.textPrimary};">
         Crea una contraseña nueva
       </h1>
       <p style="margin:0;font-size:16px;line-height:1.5;color:${color.textSecondary};">
