@@ -4,12 +4,12 @@
  *
  * Requiere en el entorno:
  * - RESEND_API_KEY: API key de Resend
- * - RESEND_FROM_EMAIL (opcional): remitente, ej. "RunMax Shop <hola@runmaxshop.com>"
+ * - RESEND_FROM_EMAIL (opcional): remitente, ej. "Runmax Shop <pedidos@runmaxshop.com>"
  * - FRONTEND_URL (opcional): base del frontend para el enlace de verificacion
  */
 
 const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
+  process.env.RESEND_FROM_EMAIL || "Runmax Shop <onboarding@resend.dev>"
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
 
 function buildEmailHtml(companyName: string, verifyUrl: string): string {

@@ -4,7 +4,7 @@
  */
 
 const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
+  process.env.RESEND_FROM_EMAIL || "Runmax Shop <onboarding@resend.dev>"
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
 
 export interface SoldItem {
