@@ -5,6 +5,7 @@ import {
 import { IProductModuleService } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { updateProductsWorkflow, deleteProductsWorkflow } from "@medusajs/core-flows"
+import { readBrandName } from "../../../../../../utils/vendor-product-brand"
 
 async function getVendorProduct(
   req: AuthenticatedMedusaRequest,
@@ -92,13 +93,27 @@ export async function PUT(
   if (thumbnail !== undefined) updateData.thumbnail = thumbnail
   if (images !== undefined) updateData.images = images
 
+  // Medusa reemplaza la metadata entera: se parte de la que ya tiene el
+  // producto para no perder vendor_id ni vendor_company_name.
+  let metadata = { ...((existingProduct.metadata ?? {}) as Record<string, unknown>) }
+  let metadataChanged = false
+
   const wasRejected = existingProduct.status === "rejected"
   if (wasRejected) {
     updateData.status = "draft"
-    const existingMeta = (existingProduct.metadata ?? {}) as Record<string, unknown>
-    const { rejection_reason: _, ...cleanMeta } = existingMeta
-    updateData.metadata = cleanMeta
+    const { rejection_reason: _, ...cleanMeta } = metadata
+    metadata = cleanMeta
+    metadataChanged = true
   }
+
+  const brand = readBrandName(req.body)
+  if (brand !== undefined) {
+    metadata.brand_name = brand
+    updateData.subtitle = brand
+    metadataChanged = true
+  }
+
+  if (metadataChanged) updateData.metadata = metadata
 
   if (variants?.length) {
     updateData.variants = variants.map((v) => ({

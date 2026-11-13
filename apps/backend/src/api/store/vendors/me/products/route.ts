@@ -7,6 +7,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createProductsWorkflow } from "@medusajs/core-flows"
 import { VENDOR_MODULE } from "../../../../../modules/vendor"
 import VendorModuleService from "../../../../../modules/vendor/service"
+import { readBrandName } from "../../../../../utils/vendor-product-brand"
 
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -106,6 +107,7 @@ export async function POST(
     .replace(/^-|-$/g, "")
 
   const suffix = vendorId.slice(-6).toLowerCase()
+  const brand = readBrandName(req.body)
 
   const vendorService: VendorModuleService = req.scope.resolve(VENDOR_MODULE)
   const vendor = await vendorService.retrieveVendor(vendorId)
@@ -131,7 +133,12 @@ export async function POST(
           thumbnail: thumbnail ?? undefined,
           images: images ?? [],
           status: "draft" as const,
-          metadata: { vendor_id: vendorId, vendor_company_name: vendor.company_name },
+          ...(brand ? { subtitle: brand } : {}),
+          metadata: {
+            vendor_id: vendorId,
+            vendor_company_name: vendor.company_name,
+            ...(brand ? { brand_name: brand } : {}),
+          },
           shipping_profile_id: defaultProfile?.id ?? undefined,
           sales_channels: defaultChannel
             ? [{ id: defaultChannel.id }]
