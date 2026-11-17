@@ -5,7 +5,7 @@
 
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "RunMax Shop <onboarding@resend.dev>"
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
+export const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.runmaxshop.com"
 
 export interface SoldItem {
   title: string
@@ -27,6 +27,7 @@ function buildEmailHtml(params: {
   total: number
   customerName: string
   customerCity: string
+  guideUrl?: string | null
 }): string {
   const itemsHtml = params.items
     .map(
@@ -106,6 +107,22 @@ function buildEmailHtml(params: {
       </div>
 
       <!-- CTA -->
+      ${params.guideUrl ? `
+      <div style="text-align:center;margin:32px 0 8px;">
+        <a href="${params.guideUrl}"
+           style="display:inline-block;padding:16px 40px;background-color:#09090B;color:#FAFAFA;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">
+          Ver e imprimir la guía
+        </a>
+      </div>
+      <p style="text-align:center;font-size:12px;color:#71717A;margin:16px 0 0;line-height:1.6;">
+        Al abrir la guía el pedido pasa a «Preparando». Cuando la transportadora
+        lo recoja pasa solo a «Enviado», y al llegar, a «Entregado».
+      </p>
+      <div style="text-align:center;margin:20px 0 0;">
+        <a href="${FRONTEND_URL}/vendedor/pedidos" style="font-size:13px;color:#09090B;font-weight:600;">
+          Ver el pedido en el panel
+        </a>
+      </div>` : `
       <div style="text-align:center;margin:32px 0 8px;">
         <a href="${FRONTEND_URL}/vendedor/pedidos"
            style="display:inline-block;padding:16px 40px;background-color:#09090B;color:#FAFAFA;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;">
@@ -114,7 +131,7 @@ function buildEmailHtml(params: {
       </div>
       <p style="text-align:center;font-size:12px;color:#A1A1AA;margin:16px 0 0;">
         Desde tu panel puedes marcar el pedido como preparado, enviado y entregado.
-      </p>
+      </p>`}
     </div>
 
     <!-- Footer -->
@@ -139,6 +156,7 @@ export async function sendVendorNewSaleEmail(params: {
   total: number
   customerName: string
   customerCity: string
+  guideUrl?: string | null
 }): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.error(

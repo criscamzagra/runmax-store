@@ -4,9 +4,11 @@ import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../modules/vendor/service"
 import { VENDOR_MODULE } from "../modules/vendor"
 import {
+  FRONTEND_URL,
   sendVendorNewSaleEmail,
   SoldItem,
 } from "../utils/vendor-new-sale-email"
+import { guideLinkToken } from "../utils/guide-link"
 
 /**
  * Cuando se crea un pedido (pago ya aprobado en el checkout), notifica por
@@ -88,6 +90,7 @@ export default async function orderPlacedNotifyVendors({
           total,
           customerName,
           customerCity,
+          guideUrl: guideUrl(order.id),
         })
       } catch (e) {
         console.error(
@@ -103,4 +106,10 @@ export default async function orderPlacedNotifyVendors({
 
 export const config: SubscriberConfig = {
   event: "order.placed",
+}
+
+/** Enlace firmado a /guia del frontend; null si el backend no tiene secreto real. */
+function guideUrl(orderId: string): string | null {
+  const token = guideLinkToken(orderId)
+  return token ? `${FRONTEND_URL}/guia/${encodeURIComponent(orderId)}?t=${token}` : null
 }
