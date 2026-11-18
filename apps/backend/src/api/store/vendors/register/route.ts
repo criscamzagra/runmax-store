@@ -5,6 +5,7 @@ import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../../../../modules/vendor/service"
 import { VENDOR_MODULE } from "../../../../modules/vendor"
 import { sendVendorVerificationEmail } from "../../../../utils/vendor-verification-email"
+import { notifyAdminNewVendor } from "../../../../utils/admin-signup-email"
 
 export async function POST(
   req: MedusaRequest,
@@ -114,11 +115,14 @@ export async function POST(
     },
   ])
 
-  const emailSent = await sendVendorVerificationEmail({
-    to: contact_email,
-    companyName: company_name,
-    token: verificationToken,
-  })
+  const [emailSent] = await Promise.all([
+    sendVendorVerificationEmail({
+      to: contact_email,
+      companyName: company_name,
+      token: verificationToken,
+    }),
+    notifyAdminNewVendor(vendor),
+  ])
 
   const {
     email_verification_token: _token,

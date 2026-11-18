@@ -54,6 +54,8 @@ export async function POST(
       company_name: v.company_name,
       pickup_address: v.pickup_address ?? null,
       pickup_city: v.pickup_city ?? null,
+      pickup_neighborhood: v.pickup_neighborhood ?? null,
+      pickup_reference: v.pickup_reference ?? null,
       contact_phone: v.contact_phone ?? null,
       contact_email: v.contact_email,
     }))

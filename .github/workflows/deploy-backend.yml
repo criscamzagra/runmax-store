@@ -32,7 +32,7 @@ jobs:
       - name: Redeploy on Railway
         run: |
           npm install -g @railway/cli
-          railway redeploy --yes \
+          railway redeploy --from-source --yes \
             -p 78a3b453-3d8e-4a7c-8bc0-63f4ffe3dc5c \
             -s 5cefd885-a276-474d-9026-6ab5db02f2a1 \
             -e production
