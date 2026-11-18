@@ -14,11 +14,19 @@ import { guideLinkToken } from "../utils/guide-link"
  * Cuando se crea un pedido (pago ya aprobado en el checkout), notifica por
  * correo a cada vendedor cuyos productos fueron comprados, con el detalle
  * de sus items y el enlace al panel de gestion de pedidos.
+ *
+ * APAGADO por defecto desde el 17-nov-2026: el correo «¡Tienes una nueva
+ * venta!» lo manda ahora el frontend (runmaxshop PR #215). Con los dos
+ * activos cada vendedor recibiria dos correos. Para volver a encenderlo
+ * (por ejemplo, si hay que revertir el frontend), poner en Railway
+ * VENDOR_SALE_EMAIL_BACKEND=on.
  */
 export default async function orderPlacedNotifyVendors({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
+  if (process.env.VENDOR_SALE_EMAIL_BACKEND !== "on") return
+
   const orderService: IOrderModuleService = container.resolve(Modules.ORDER)
   const productService: IProductModuleService = container.resolve(Modules.PRODUCT)
   const vendorService: VendorModuleService = container.resolve(VENDOR_MODULE)
