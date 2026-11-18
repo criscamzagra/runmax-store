@@ -93,6 +93,20 @@ export async function GET(
           0
         ),
         vendor_total: vendorTotal,
+        // Cada producto del vendedor en el pedido. `product_title`, `product_thumbnail`
+        // y `quantity` se quedan por compatibilidad: solo dicen el primero y la suma.
+        items: vendorItems.map((item: any) => {
+          const info = vendorProductMap[item.product_id as string]
+          return {
+            id: item.id as string,
+            product_id: (item.product_id as string) || null,
+            title: info?.title || (item.product_title as string) || (item.title as string) || "—",
+            variant_title: (item.variant_title as string) || null,
+            thumbnail: (item.thumbnail as string) || info?.thumbnail || null,
+            quantity: (item.quantity as number) || 1,
+            unit_price: (item.unit_price as number) || 0,
+          }
+        }),
         fulfillment_status: (() => {
           const details = vendorItems.map((i: any) => (i.detail || {}) as any)
           const allDelivered = details.length > 0 && details.every((d: any) => (d.delivered_quantity as number) >= (d.quantity as number))
