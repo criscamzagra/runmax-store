@@ -4,18 +4,16 @@ import { Modules } from "@medusajs/framework/utils"
 import VendorModuleService from "../modules/vendor/service"
 import { VENDOR_MODULE } from "../modules/vendor"
 import {
-  parsePaymentMethod,
+  FRONTEND_URL,
   sendVendorNewSaleEmail,
   SoldItem,
 } from "../utils/vendor-new-sale-email"
+import { guideLinkToken } from "../utils/guide-link"
 
 /**
- * Cuando se crea un pedido, notifica por correo a cada vendedor cuyos
- * productos fueron comprados, con el detalle de sus items y el enlace al panel
- * de gestion de pedidos.
- *
- * El pedido puede estar ya cobrado (ePayco) o cobrarse al entregar (contra
- * entrega): el correo lo dice segun `metadata.payment_method`.
+ * Cuando se crea un pedido (pago ya aprobado en el checkout), notifica por
+ * correo a cada vendedor cuyos productos fueron comprados, con el detalle
+ * de sus items y el enlace al panel de gestion de pedidos.
  */
 export default async function orderPlacedNotifyVendors({
   event: { data },
@@ -62,8 +60,6 @@ export default async function orderPlacedNotifyVendors({
         title: (item.title as string) || "Producto",
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unit_price) || 0,
-        variant: (item.variant_title as string) || null,
-        thumbnail: (item.thumbnail as string) || null,
       })
       itemsByVendor.set(vendorId, list)
     }
@@ -75,9 +71,6 @@ export default async function orderPlacedNotifyVendors({
       ? `${shippingAddress.first_name || ""} ${shippingAddress.last_name || ""}`.trim() || "Cliente"
       : "Cliente"
     const customerCity = shippingAddress?.city || "—"
-    const paymentMethod = parsePaymentMethod(
-      (order.metadata as Record<string, unknown> | null)?.payment_method
-    )
 
     for (const [vendorId, soldItems] of itemsByVendor) {
       try {
@@ -97,7 +90,7 @@ export default async function orderPlacedNotifyVendors({
           total,
           customerName,
           customerCity,
-          paymentMethod,
+          guideUrl: guideUrl(order.id),
         })
       } catch (e) {
         console.error(
@@ -113,4 +106,10 @@ export default async function orderPlacedNotifyVendors({
 
 export const config: SubscriberConfig = {
   event: "order.placed",
+}
+
+/** Enlace firmado a /guia del frontend; null si el backend no tiene secreto real. */
+function guideUrl(orderId: string): string | null {
+  const token = guideLinkToken(orderId)
+  return token ? `${FRONTEND_URL}/guia/${encodeURIComponent(orderId)}?t=${token}` : null
 }

@@ -21,6 +21,6 @@ export async function POST(
   const { id } = req.params
   const data = req.body as Record<string, unknown>
 
-  const vendor = await vendorService.updateVendors({ id, ...data })
+  const vendor = await vendorService.updateVendors({ ...data, id })
   res.json({ vendor })
 }
