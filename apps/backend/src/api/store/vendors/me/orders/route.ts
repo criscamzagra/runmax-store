@@ -51,7 +51,7 @@ export async function GET(
   const allOrders = await orderService.listOrders(
     {},
     {
-      select: ["id", "created_at", "display_id", "currency_code", "fulfillment_status", "payment_status"],
+      select: ["id", "created_at", "display_id", "currency_code", "fulfillment_status", "payment_status", "status", "metadata"],
       relations: ["items", "shipping_address"],
       order: { created_at: "DESC" },
       take: 100,
@@ -59,6 +59,10 @@ export async function GET(
   )
 
   const vendorOrders = allOrders
+    // Un pedido cancelado no se despacha. Uno por transferencia tampoco, hasta
+    // que ventas aprueba el pago: el frontend marca `transfer_approved_at` en la
+    // metadata al aprobarlo (transfer-approval.ts en el repo del frontend).
+    .filter((order) => isDispatchable(order as DispatchCheck))
     .filter((order) =>
       order.items?.some((item: any) =>
         vendorProductIds.includes(item.product_id)
@@ -124,4 +128,13 @@ export async function GET(
     })
 
   res.json({ orders: vendorOrders, count: vendorOrders.length })
+}
+
+type DispatchCheck = { status?: unknown; metadata?: Record<string, unknown> | null }
+
+function isDispatchable(order: DispatchCheck): boolean {
+  if (order.status === "canceled") return false
+  const metadata = order.metadata ?? {}
+  if (metadata.payment_method === "transfer" && !metadata.transfer_approved_at) return false
+  return true
 }
