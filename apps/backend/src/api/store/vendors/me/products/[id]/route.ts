@@ -6,6 +6,8 @@ import { IProductModuleService } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { updateProductsWorkflow, deleteProductsWorkflow } from "@medusajs/core-flows"
 import { readBrandName } from "../../../../../../utils/vendor-product-brand"
+import { applyClassification, readClassification } from "../../../../../../utils/vendor-product-classification"
+import { resolveVendorCategoryIds } from "../../../../../../utils/vendor-product-categories"
 
 async function getVendorProduct(
   req: AuthenticatedMedusaRequest,
@@ -53,6 +55,9 @@ export async function GET(
       "images.*",
       "variants.*",
       "variants.prices.*",
+      "categories.id",
+      "categories.handle",
+      "categories.name",
     ],
     filters: { id: productId },
   })
@@ -113,7 +118,16 @@ export async function PUT(
     metadataChanged = true
   }
 
+  const classification = readClassification(req.body)
+  if (Object.keys(classification).length > 0) {
+    metadata = applyClassification(metadata, classification)
+    metadataChanged = true
+  }
+
   if (metadataChanged) updateData.metadata = metadata
+
+  const categoryIds = await resolveVendorCategoryIds(req.scope, req.body)
+  if (categoryIds !== undefined) updateData.category_ids = categoryIds
 
   if (variants?.length) {
     updateData.variants = variants.map((v) => ({

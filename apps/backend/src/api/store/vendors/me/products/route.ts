@@ -8,6 +8,8 @@ import { createProductsWorkflow } from "@medusajs/core-flows"
 import { VENDOR_MODULE } from "../../../../../modules/vendor"
 import VendorModuleService from "../../../../../modules/vendor/service"
 import { readBrandName } from "../../../../../utils/vendor-product-brand"
+import { applyClassification, readClassification } from "../../../../../utils/vendor-product-classification"
+import { resolveVendorCategoryIds } from "../../../../../utils/vendor-product-categories"
 
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -108,6 +110,8 @@ export async function POST(
 
   const suffix = vendorId.slice(-6).toLowerCase()
   const brand = readBrandName(req.body)
+  const classification = readClassification(req.body)
+  const categoryIds = await resolveVendorCategoryIds(req.scope, req.body)
 
   const vendorService: VendorModuleService = req.scope.resolve(VENDOR_MODULE)
   const vendor = await vendorService.retrieveVendor(vendorId)
@@ -134,11 +138,15 @@ export async function POST(
           images: images ?? [],
           status: "draft" as const,
           ...(brand ? { subtitle: brand } : {}),
-          metadata: {
-            vendor_id: vendorId,
-            vendor_company_name: vendor.company_name,
-            ...(brand ? { brand_name: brand } : {}),
-          },
+          metadata: applyClassification(
+            {
+              vendor_id: vendorId,
+              vendor_company_name: vendor.company_name,
+              ...(brand ? { brand_name: brand } : {}),
+            },
+            classification
+          ),
+          ...(categoryIds?.length ? { category_ids: categoryIds } : {}),
           shipping_profile_id: defaultProfile?.id ?? undefined,
           sales_channels: defaultChannel
             ? [{ id: defaultChannel.id }]
