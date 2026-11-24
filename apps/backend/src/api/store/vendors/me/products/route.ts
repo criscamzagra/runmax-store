@@ -41,7 +41,12 @@ export async function GET(
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const variantIds = products.flatMap((p) => p.variants.map((v) => v.id))
 
-  let inventoryMap: Record<string, number> = {}
+  // Por variante: en bodega (stocked) y reservado por pedidos aún sin
+  // despachar. Lo que la tienda puede vender es la resta (lo mismo que ve el
+  // storefront). `inventory_quantity` sigue siendo lo que hay en bodega para
+  // no romper a quien ya lo lee.
+  const stockedMap: Record<string, number> = {}
+  const reservedMap: Record<string, number> = {}
   if (variantIds.length > 0) {
     try {
       const { data: links } = await query.graph({
@@ -53,8 +58,10 @@ export async function GET(
         const vid = link.variant_id as string
         const inv = link.inventory as any
         const levels = (inv?.location_levels ?? []) as Array<Record<string, number>>
-        const total = levels.reduce((s, l) => s + (l.stocked_quantity ?? 0), 0)
-        inventoryMap[vid] = (inventoryMap[vid] ?? 0) + total
+        const stocked = levels.reduce((s, l) => s + (l.stocked_quantity ?? 0), 0)
+        const reserved = levels.reduce((s, l) => s + (l.reserved_quantity ?? 0), 0)
+        stockedMap[vid] = (stockedMap[vid] ?? 0) + stocked
+        reservedMap[vid] = (reservedMap[vid] ?? 0) + reserved
       }
     } catch {
       // inventory module may not have links yet
@@ -63,10 +70,19 @@ export async function GET(
 
   const enriched = products.map((p) => ({
     ...p,
-    variants: p.variants.map((v) => ({
-      ...v,
-      inventory_quantity: inventoryMap[v.id] ?? null,
-    })),
+    variants: p.variants.map((v) => {
+      const stocked = stockedMap[v.id]
+      if (stocked === undefined) {
+        return { ...v, inventory_quantity: null, reserved_quantity: null, available_quantity: null }
+      }
+      const reserved = reservedMap[v.id] ?? 0
+      return {
+        ...v,
+        inventory_quantity: stocked,
+        reserved_quantity: reserved,
+        available_quantity: Math.max(0, stocked - reserved),
+      }
+    }),
   }))
 
   res.json({ products: enriched, count: enriched.length })
